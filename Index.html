@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#304d91">
+<title>Gem Block Puzzle</title>
+
+<style>
+:root {
+  --bg1: #405f9f;
+  --bg2: #2c467f;
+  --text: #f7fbff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: system-ui, sans-serif;
+  color: var(--text);
+  background: linear-gradient(160deg, var(--bg1), var(--bg2));
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  padding: 16px 12px 28px;
+  touch-action: pan-y;
+}
+
+.app {
+  width: min(100%, 470px);
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 4px 2px 18px;
+}
+
+.brand {
+  font-weight: 900;
+  font-size: clamp(19px, 5vw, 25px);
+  text-shadow: 0 2px 0 #243a6c;
+}
+
+.iconbtn {
+  border: 0;
+  background: #ffffff1b;
+  color: white;
+  border-radius: 13px;
+  width: 43px;
+  height: 43px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  margin: 8px 0 18px;
+}
+
+.stat {
+  text-align: center;
+  min-width: 65px;
+}
+
+.stat .symbol {
+  font-size: 32px;
+}
+
+.stat .num {
+  font-size: 25px;
+  font-weight: 850;
+}
+
+.board-wrap {
+  background: linear-gradient(145deg, #24396f, #182650);
+  padding: 8px;
+  border-radius: 17px;
+  box-shadow: 0 8px 0 #15244b;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 3px;
+  aspect-ratio: 1;
+  background: #111b3b;
+  padding: 3px;
+  border-radius: 10px;
+  touch-action: none;
+}
+
+.cell {
+  min-width: 0;
+  position: relative;
+  border-radius: 3px;
+  background: #1c274b;
+  border: 1px solid #15203f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cell.filled {
+  border: 1px solid #b68b53;
+  background: linear-gradient(145deg, #f1d8a6, #c8a16a);
+  box-shadow: inset 0 2px 0 #fff4d4;
+}
+
+.block {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border: 1px solid #ffffff26;
+  box-shadow: inset 0 2px 0 #ffffff48;
+}
+
+.block.blue {
+  background: linear-gradient(145deg, #6ce7ff, #078ed8 72%);
+}
+
+.block.gold {
+  background: linear-gradient(145deg, #ffe66b, #e8a51c 75%);
+}
+
+.block.purple {
+  background: linear-gradient(145deg, #c47cff, #7539c6 75%);
+}
+
+.block.orange {
+  background: linear-gradient(145deg, #ffb14b, #ef650f 75%);
+}
+
+.block.red {
+  background: linear-gradient(145deg, #ff7979, #c92639 75%);
+}
+
+.block.cobalt {
+  background: linear-gradient(145deg, #719aff, #244ed2 75%);
+}
+
+.gem, .star {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(13px, 4.4vw, 24px);
+}
+
+.tray {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 24px 0 8px;
+  min-height: 110px;
+}
+
+.slot {
+  min-height: 105px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 13px;
+  background: #ffffff0a;
+  border: 1px solid #ffffff10;
+  touch-action: none;
+}
+
+.piece {
+  display: grid;
+  gap: 3px;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  position: relative;
+}
+
+.piece-cell {
+  width: clamp(23px, 6.5vw, 31px);
+  height: clamp(23px, 6.5vw, 31px);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.piece-cell .block {
+  border-radius: 3px;
+}
+
+.piece.used {
+  opacity: .13;
+  pointer-events: none;
+}
+
+.hint {
+  text-align: center;
+  font-size: 13px;
+  opacity: .85;
+  margin: 7px 0 12px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.action {
+  border: 1px solid #ffffff30;
+  background: #ffffff15;
+  color: white;
+  border-radius: 12px;
+  padding: 10px 17px;
+  font-weight: 750;
+  font-size: 14px;
+}
+
+.message {
+  min-height: 24px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 8px 0;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: #07122be8;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 10;
+}
+
+.overlay.show {
+  display: flex;
+}
+
+.modal {
+  width: min(100%, 330px);
+  background: linear-gradient(145deg, #3e5e9d, #223866);
+  padding: 24px;
+  border-radius: 20px;
+  text-align: center;
+}
+
+.modal p {
+  line-height: 1.5;
+}
+
+small.footer {
+  display: block;
+  text-align: center;
+  opacity: .6;
+  font-size: 11px;
+  margin-top: 16px;
+}
+
+.cell.preview {
+  outline: 2px solid #76f5ff;
+  outline-offset: -2px;
+  background: #376a9d !important;
+}
+
+@media (min-width: 420px) {
+  .board {
+    gap: 4px;
+    padding: 4px;
+  }
+  .board-wrap {
+    padding: 9px;
+  }
+}
+</style>
+</head>
+
+<body>
+<main class="app">
+
+  <header class="topbar">
+    <button class="iconbtn" id="backBtn">‹</button>
+    <div class="brand">💎 GEM BLOCK</div>
+    <button class="iconbtn" id="helpBtn">?</button>
+  </header>
+
+  <section class="stats">
+    <div class="stat">
+      <div class="symbol">💎</div>
+      <div class="num" id="gems">0</div>
+    </div>
+    <div class="stat">
+      <div class="symbol">⭐</div>
+      <div class="num" id="stars">0</div>
+    </div>
+    <div class="stat">
+      <div class="symbol">🏆</div>
+      <div class="num" id="score">0</div>
+    </div>
+  </section>
+
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="message" id="message">
+    নিচের ব্লক বোর্ডে বসাও!
+  </div>
+
+  <section class="tray" id="tray"></section>
+
+  <div class="hint">
+    ব্লক টেনে বোর্ডে বসাও • পুরো সারি বা কলাম ভরলে মুছে যাবে
+  </div>
+
+  <div class="actions">
+    <button class="action" id="restartBtn">↻ নতুন গেম</button>
+    <button class="action" id="soundBtn">🔊 সাউন্ড: বন্ধ</button>
+  </div>
+
+  <small class="footer">
+    Gem Block Puzzle • বিনামূল্যে খেলুন
+  </small>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">গেম শেষ!</h2>
+    <p id="modalText">আরেকবার চেষ্টা করবে?</p>
+    <button class="action" id="modalBtn">আবার খেলি</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const N = 8;
+
+  const boardEl = document.getElementById('board');
+  const trayEl = document.getElementById('tray');
+  const scoreEl = document.getElementById('score');
+  const gemsEl = document.getElementById('gems');
+  const starsEl = document.getElementById('stars');
+  const msg = document.getElementById('message');
+  const overlay = document.getElementById('overlay');
+
+  const colors = [
+    'blue', 'gold', 'purple',
+    'orange', 'red', 'cobalt'
+  ];
+
+  const shapes = [
+    [[0,0]],
+    [[0,0],[0,1]],
+    [[0,0],[1,0]],
+    [[0,0],[0,1],[0,2]],
+    [[0,0],[1,0],[2,0]],
+    [[0,0],[0,1],[1,0],[1,1]],
+    [[0,0],[1,0],[1,1]],
+    [[0,1],[1,0],[1,1]],
+    [[0,0],[0,1],[0,2],[1,1]],
+    [[0,0],[1,0],[2,0],[2,1]],
+    [[0,0],[0,1],[0,2],[0,3]],
+    [[0,0],[1,0],[2,0],[3,0]],
+    [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]]
+  ];
+
+  let grid;
+  let pieces = [];
+  let score = 0;
+  let gems = 0;
+  let stars = 0;
+  let sound = false;
+  let drag = null;
+  let audioCtx = null;
+
+  function playTone(freq = 660) {
+    if (!sound) return;
+
+    try {
+      audioCtx = audioCtx ||
+        new (window.AudioContext || window.webkitAudioContext)();
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+
+      gain.gain.setValueAtTime(.07, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(
+        .001, audioCtx.currentTime + .13
+      );
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + .13);
+    } catch (e) {}
+  }
+
+  function newGame() {
+    grid = Array.from(
+      { length: N },
+      () => Array(N).fill(null)
+    );
+
+    score = 0;
+    gems = 0;
+    stars = 0;
+
+    overlay.classList.remove('show');
+    document.getElementById('modalBtn').textContent = 'আবার খেলি';
+    msg.textContent = 'নিচের ব্লক বোর্ডে বসাও!';
+
+    const starters = [
+      [0,1,'gold','star'],
+      [0,5,'orange',null],
+      [1,0,'gold','gem'],
+      [1,1,'gold','star'],
+      [1,4,'blue','gem'],
+      [2,0,'blue',null],
+      [2,1,'purple',null],
+      [2,5,'gold','gem'],
+      [3,1,'gold','star'],
+      [5,7,'cobalt',null],
+      [6,7,'cobalt',null]
+    ];
+
+    starters.forEach(([r,c,color,token]) => {
+      grid[r][c] = { color, token };
+    });
+
+    pieces = [];
+    renderBoard();
+    makePieces();
+    updateStats();
+  }
+
+  function updateStats() {
+    scoreEl.textContent = score;
+    gemsEl.textContent = gems;
+    starsEl.textContent = stars;
+  }
+
+  function renderBoard() {
+    boardEl.innerHTML = '';
+
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        const cell = document.createElement('div');
+
+        cell.className = 'cell' +
+          (grid[r][c] ? ' filled' : '');
+
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+
+        if (grid[r][c]) {
+          cell.appendChild(
+            makeBlock(
+              grid[r][c].color,
+              grid[r][c].token
+            )
+          );
+        }
+
+        boardEl.appendChild(cell);
+      }
+    }
+  }
+
+  function makeBlock(color, token) {
+    const block = document.createElement('div');
+    block.className = 'block ' + color;
+
+    if (token) {
+      const item = document.createElement('span');
+
+      item.className = token === 'gem' ? 'gem' : 'star';
+      item.textContent = token === 'gem' ? '💎' : '⭐';
+
+      block.appendChild(item);
+    }
+
+    return block;
+  }
+
+  function randomPiece() {
+    const shape = shapes[
+      Math.floor(Math.random() * shapes.length)
+    ];
+
+    return {
+      shape: shape.map(p => p.slice()),
+      color: colors[
+        Math.floor(Math.random() * colors.length)
+      ],
+      used: false
+    };
+  }
+
+  function makePieces() {
+    trayEl.innerHTML = '';
+
+    pieces = [
+      randomPiece(),
+      randomPiece(),
+      randomPiece()
+    ];
+
+    pieces.forEach((p, i) => {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+
+      const piece = document.createElement('div');
+      piece.className = 'piece';
+      piece.dataset.index = i;
+
+      const maxR = Math.max(
+        ...p.shape.map(x => x[0])
+      ) + 1;
+
+      const maxC = Math.max(
+        ...p.shape.map(x => x[1])
+      ) + 1;
+
+      piece.style.gridTemplateColumns =
+        `repeat(${maxC}, auto)`;
+
+      const map = new Map(
+        p.shape.map(([r,c]) => [r + ',' + c, true])
+      );
+
+      for (let r = 0; r < maxR; r++) {
+        for (let c = 0; c < maxC; c++) {
+          const pc = document.createElement('div');
+          pc.className = 'piece-cell';
+
+          if (map.has(r + ',' + c)) {
+            pc.appendChild(makeBlock(p.color, null));
+          } else {
+            pc.style.visibility = 'hidden';
+          }
+
+          piece.appendChild(pc);
+        }
+      }
+
+      slot.appendChild(piece);
+      trayEl.appendChild(slot);
+
+      piece.addEventListener('pointerdown', e => {
+        startDrag(e, i, piece);
+      });
+    });
+
+    checkGameOver();
+  }
+
+  function startDrag(e, index, el) {
+    if (pieces[index].used) return;
+
+    e.preventDefault();
+
+    const rect = el.getBoundingClientRect();
+
+    drag = {
+      index,
+      el,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      ghost: null
+    };
+
+    el.style.opacity = '.35';
+
+    const ghost = el.cloneNode(true);
+
+    ghost.style.position = 'fixed';
+    ghost.style.zIndex = '100';
+    ghost.style.pointerEvents = 'none';
+    ghost.style.opacity = '.9';
+    ghost.style.filter = 'drop-shadow(0 8px 8px #0006)';
+
+    ghost.style.left =
+      (e.clientX - drag.offsetX) + 'px';
+
+    ghost.style.top =
+      (e.clientY - drag.offsetY) + 'px';
+
+    document.body.appendChild(ghost);
+    drag.ghost = ghost;
+
+    document.addEventListener(
+      'pointermove', moveDrag, { passive: false }
+    );
+
+    document.addEventListener(
+      'pointerup', endDrag, { once: true }
+    );
+  }
+
+  function moveDrag(e) {
+    if (!drag) return;
+
+    e.preventDefault();
+
+    drag.ghost.style.left =
+      (e.clientX - drag.offsetX) + 'px';
+
+    drag.ghost.style.top =
+      (e.clientY - drag.offsetY) + 'px';
+
+    const el = document.elementFromPoint(
+      e.clientX, e.clientY
+    );
+
+    const cell = el?.closest('.cell');
+
+    document.querySelectorAll('.cell.preview')
+      .forEach(x => x.classList.remove('preview'));
+
+    if (cell) {
+      const r = +cell.dataset.r;
+      const c = +cell.dataset.c;
+      const shape = pieces[drag.index].shape;
+
+      if (canPlace(shape, r, c)) {
+        shape.forEach(([dr,dc]) => {
+          const target = boardEl.querySelector(
+            `.cell[data-r="${r+dr}"][data-c="${c+dc}"]`
+          );
+
+          if (target) target.classList.add('preview');
+        });
+      }
+    }
+  }
+
+  function canPlace(shape, r, c) {
+    return shape.every(([dr,dc]) =>
+      r + dr >= 0 &&
+      c + dc >= 0 &&
+      r + dr < N &&
+      c + dc < N &&
+      !grid[r + dr][c + dc]
+    );
+  }
+
+  function endDrag(e) {
+    document.removeEventListener('pointermove', moveDrag);
+
+    if (!drag) return;
+
+    const current = drag;
+
+    const el = document.elementFromPoint(
+      e.clientX, e.clientY
+    );
+
+    const cell = el?.closest('.cell');
+
+    document.querySelectorAll('.cell.preview')
+      .forEach(x => x.classList.remove('preview'));
+
+    if (cell) {
+      const r = +cell.dataset.r;
+      const c = +cell.dataset.c;
+      const p = pieces[current.index];
+
+      if (canPlace(p.shape, r, c)) {
+        p.shape.forEach(([dr,dc]) => {
+          let token = null;
+
+          if (Math.random() < .16) {
+            token = 'gem';
+          } else if (Math.random() < .10) {
+            token = 'star';
+          }
+
+          grid[r + dr][c + dc] = {
+            color: p.color,
+            token
+          };
+
+          score += 10;
+        });
+
+        p.used = true;
+        playTone(720);
+
+        msg.textContent = 'দারুণ! ব্লক বসেছে।';
+
+        clearLines();
+
+        if (pieces.every(x => x.used)) {
+          makePieces();
+        } else {
+          renderBoard();
+        }
+
+        updateStats();
+        checkGameOver();
+      } else {
+        msg.textContent =
+          'এখানে ব্লক বসবে না, অন্য জায়গায় চেষ্টা করো।';
+      }
+    }
+
+    current.ghost.remove();
+    current.el.style.opacity = '';
+    drag = null;
+  }
+
+  function clearLines() {
+    const rows = [];
+    const cols = [];
+
+    for (let r = 0; r < N; r++) {
+      if (grid[r].every(Boolean)) rows.push(r);
+    }
+
+    for (let c = 0; c < N; c++) {
+      if (grid.every(row => row[c])) cols.push(c);
+    }
+
+    if (!rows.length && !cols.length) {
+      renderBoard();
+      return;
+    }
+
+    const clear = new Set();
+
+    rows.forEach(r => {
+      for (let c = 0; c < N; c++) {
+        clear.add(r + ',' + c);
+      }
+    });
+
+    cols.forEach(c => {
+      for (let r = 0; r < N; r++) {
+        clear.add(r + ',' + c);
+      }
+    });
+
+    clear.forEach(key => {
+      const [r,c] = key.split(',').map(Number);
+      const tile = grid[r][c];
+
+      if (tile?.token === 'gem') gems++;
+      if (tile?.token === 'star') stars++;
+
+      grid[r][c] = null;
+    });
+
+    score += clear.size * 20;
+    score += rows.length * 50;
+    score += cols.length * 50;
+
+    msg.textContent =
+      `চমৎকার! ${rows.length + cols.length}টি সারি/কলাম পরিষ্কার!`;
+
+    renderBoard();
+  }
+
+  function checkGameOver() {
+    if (!pieces.length || pieces.every(p => p.used)) return;
+
+    const possible = pieces.some(p =>
+      !p.used &&
+      grid.some((row,r) =>
+        row.some((_,c) => canPlace(p.shape,r,c))
+      )
+    );
+
+    if (!possible) {
+      document.getElementById('modalTitle').textContent =
+        'গেম শেষ!';
+
+      document.getElementById('modalText').textContent =
+        `তোমার স্কোর ${score} • 💎 ${gems} • ⭐ ${stars}. আবার খেলবে?`;
+
+      overlay.classList.add('show');
+    }
+  }
+
+  document.getElementById('restartBtn')
+    .addEventListener('click', newGame);
+
+  document.getElementById('backBtn')
+    .addEventListener('click', newGame);
+
+  document.getElementById('modalBtn')
+    .addEventListener('click', newGame);
+
+  document.getElementById('soundBtn')
+    .addEventListener('click', () => {
+      sound = !sound;
+
+      document.getElementById('soundBtn').textContent =
+        sound ? '🔊 সাউন্ড: চালু' : '🔇 সাউন্ড: বন্ধ';
+
+      msg.textContent = sound
+        ? 'সাউন্ড চালু হয়েছে।'
+        : 'সাউন্ড বন্ধ আছে।';
+
+      if (sound) playTone(880);
+    });
+
+  document.getElementById('helpBtn')
+    .addEventListener('click', () => {
+      document.getElementById('modalTitle').textContent =
+        'খেলার নিয়ম';
+
+      document.getElementById('modalText').textContent =
+        'নিচের ৩টি ব্লক এক এক করে বোর্ডে টেনে বসাও। পুরো অনুভূমিক সারি বা উল্লম্ব কলাম পূর্ণ হলে তা মুছে যাবে। জেম ও স্টার সংগ্রহ করো, বেশি স্কোর করো!';
+
+      document.getElementById('modalBtn').textContent =
+        'বুঝেছি';
+
+      overlay.classList.add('show');
+    });
+
+  newGame();
+})();
+</script>
+</body>
+</html>
